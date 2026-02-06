@@ -1,0 +1,119 @@
+import { BlurView } from 'expo-blur';
+import { useEffect, useState } from 'react';
+import { Animated, ScrollView, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+
+const GlassCard = ({ children, style, colors, backgroundColor, borderColor }) => (
+  <BlurView intensity={85} tint={colors.blurTint} style={{ borderRadius: 20, overflow: 'hidden', marginBottom: 14 }}>
+    <View style={[{
+      backgroundColor: backgroundColor || colors.tileBg,
+      borderRadius: 20,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: borderColor || colors.accent + '15',
+      shadowColor: colors.text,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.1,
+      shadowRadius: 12,
+      elevation: 3
+    }, style]}>
+      {children}
+    </View>
+  </BlurView>
+);
+
+export const InsightsScreen = ({ onBack, colors, profile }) => {
+  const insets = useSafeAreaInsets();
+  const [cardScales] = useState([
+    new Animated.Value(0.8),
+    new Animated.Value(0.8),
+    new Animated.Value(0.8),
+    new Animated.Value(0.8)
+  ]);
+  const [cardOpacities] = useState([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0)
+  ]);
+  const confidence = Math.round((profile?.lastMoodConfidence || 0) * 100);
+  const streak = profile?.streak || 0;
+  const tokens = profile?.zenTokens || 0;
+  
+  useEffect(() => {
+    cardScales.forEach((scale, i) => {
+      Animated.parallel([
+        Animated.timing(scale, { toValue: 1, duration: 500, delay: i * 100, useNativeDriver: true }),
+        Animated.timing(cardOpacities[i], { toValue: 1, duration: 500, delay: i * 100, useNativeDriver: true })
+      ]).start();
+    });
+  }, []);
+  
+  const getLevel = (t) => {
+    if (t < 100) return 'Novice';
+    if (t < 300) return 'Seeker';
+    if (t < 500) return 'Meditator';
+    return 'Zen Master';
+  };
+  
+  return (
+    <ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingHorizontal: 14, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false}>
+      <View style={{ marginBottom: 20 }}>
+        <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text }}>Zen Insights</Text>
+        <Text style={{ fontSize: 14, color: colors.subtext, marginTop: 4 }}>Track your wellness journey</Text>
+      </View>
+      
+      <Animated.View style={{ opacity: cardOpacities[0], transform: [{ scale: cardScales[0] }] }}>
+        <GlassCard colors={colors} backgroundColor={colors.icon.orange + '08'} borderColor={colors.icon.orange + '30'}>
+          <View style={{ alignItems: 'flex-start', gap: 10 }}>
+            <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Current Mood</Text>
+            <Text style={{ fontSize: 48 }}>{profile?.lastMood || '😶'}</Text>
+            <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>{profile?.lastMoodLabel || 'Unknown'}</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+              <View style={{ height: 6, width: `${confidence}%`, backgroundColor: colors.icon.orange, borderRadius: 3 }} />
+              <Text style={{ color: colors.subtext, fontSize: 12 }}>Confidence: {confidence}%</Text>
+            </View>
+          </View>
+        </GlassCard>
+      </Animated.View>
+      
+      <Animated.View style={{ opacity: cardOpacities[1], transform: [{ scale: cardScales[1] }] }}>
+        <GlassCard colors={colors} backgroundColor={colors.icon.orange + '08'} borderColor={colors.icon.orange + '30'}>
+          <View style={{ alignItems: 'flex-start', gap: 10 }}>
+            <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Streak Status</Text>
+            <Text style={{ fontSize: 48 }}>🔥</Text>
+            <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>{streak} Day Streak</Text>
+            <Text style={{ color: colors.subtext, marginTop: 4, fontSize: 13 }}>Keep building momentum!</Text>
+          </View>
+        </GlassCard>
+      </Animated.View>
+      
+      <Animated.View style={{ opacity: cardOpacities[2], transform: [{ scale: cardScales[2] }] }}>
+        <GlassCard colors={colors} backgroundColor={colors.accent + '08'} borderColor={colors.accent + '30'}>
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Zen Wisdom</Text>
+            <Text style={{ color: colors.subtext, fontSize: 15, lineHeight: 24, fontStyle: 'italic' }}>
+              "Breathe in calm, breathe out stress. You are in control of your peace."
+            </Text>
+          </View>
+        </GlassCard>
+      </Animated.View>
+      
+      <Animated.View style={{ opacity: cardOpacities[3], transform: [{ scale: cardScales[3] }] }}>
+        <GlassCard colors={colors} backgroundColor={colors.accent + '12'} borderColor={colors.accent + '40'}>
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Wellness Score</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+              <Text style={{ color: colors.accent, fontSize: 42, fontWeight: '800' }}>{tokens}</Text>
+              <Text style={{ color: colors.subtext, fontSize: 13 }}>Zen Tokens</Text>
+            </View>
+            <View style={{ height: 8, backgroundColor: colors.tileBg, borderRadius: 4, overflow: 'hidden', marginTop: 8 }}>
+              <View style={{ height: '100%', width: `${Math.min((tokens / 500) * 100, 100)}%`, backgroundColor: colors.accent, borderRadius: 4 }} />
+            </View>
+            <Text style={{ color: colors.subtext, fontSize: 11, marginTop: 4 }}>Level: {getLevel(tokens)}</Text>
+          </View>
+        </GlassCard>
+      </Animated.View>
+    </ScrollView>
+  );
+};
