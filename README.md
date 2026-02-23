@@ -11,15 +11,15 @@
 
 **StressBuster** makes mental health maintenance engaging and accessible through gamification. Users earn **Zen Tokens** by completing stress-relief activities (breathing exercises, tactile games, mood tracking), which they can spend on AI-powered therapy sessions.
 
-The app features an AI companion powered by **Google's Gemini 2.0 Flash**, providing empathetic, context-aware conversations. The interface uses **Glassmorphism** design with smooth animations, creating a calming and modern user experience.
+The app features an AI companion (Zen Chat) that can use **Gemini**, **Groq**, or **OpenAI** (configurable). Mood is **keyword-based only** to avoid API rate limits. The interface uses **Glassmorphism** design with smooth animations, creating a calming and modern user experience.
 
 ## ✨ Key Features
 
-### � AI Companion
-* **Gemini 2.0 Flash Integration:** Delivers context-aware, therapeutic responses with low latency
+### � 🤖 AI Companion (Zen Chat)
+* **Multi-Provider AI:** Zen chat rotates between Gemini, Groq, and OpenAI (configurable via `ZEN_PROVIDERS` in `.env`) to reduce rate-limit pressure
 * **Floating Bubble UI:** Modern chat interface with glassmorphism and smooth animations
-* **Token Economy:** Spend Zen Tokens for AI conversations, encouraging healthy habits
-* **Mood Detection:** AI analyzes emotional state and provides appropriate support
+* **Token Economy:** Spend Zen Tokens per message (cost and daily cap in `utils/zenTokens.js`)
+* **Keyword-Based Mood:** Mood from keywords only (no API); journal and Zen chat use `utils/moodFromKeywords.js`
 * **Conversation History:** Cloud-synced chat sessions stored in Firebase
 
 ### 🎮 20 Interactive Mini-Games
@@ -80,8 +80,9 @@ Haptic-enabled stress-relief games designed to ground and calm:
 
 ### Backend & Services
 * **Firebase v12** - Authentication & Firestore database
-* **Google Gemini 2.0 Flash API** - AI conversation model
+* **Zen Chat AI** - Gemini / Groq / OpenAI (see `app.config.js`, `utils/zenChatProviders.js`); provider order and keys via `.env`
 * **Cloud Firestore** - Real-time data sync for profiles, moods, and journals
+* **Mood** - Keyword-based only (`utils/moodFromKeywords.js`), no AI calls for mood
 
 ### Key Dependencies
 * `expo-blur` - Glassmorphism effects
@@ -104,102 +105,197 @@ StressBuster/
 │   ├── (tabs)/
 │   │   └── index.jsx          # Main app with all tabs and routing
 │   └── _layout.tsx             # Root layout with providers
+├── app.config.js              # Expo config; reads API keys from .env (supports encrypted keys)
 ├── components/
-│   ├── minigames/              # 20 mini-game components
-│   │   ├── ZenMatch.jsx
-│   │   ├── PopBubbles.jsx
-│   │   ├── MathBlitz.jsx
-│   │   └── ... (17 more games)
-│   ├── screens/                # Utility screens
-│   │   ├── JournalScreen.jsx
-│   │   ├── InsightsScreen.jsx
-│   │   ├── AIChatScreen.jsx
-│   │   ├── SoundScreen.jsx
-│   │   ├── TimerScreen.jsx
-│   │   └── QuoteScreen.jsx
+│   ├── minigames/              # Mini-game components (tokens scaled in utils/zenTokens.js)
+│   ├── screens/                # Journal, Zen Chat, Insights, Sound, Timer, Quote, Auth
 │   └── ui/                     # Reusable UI components
+├── context/                    # AuthContext, ThemeContext
+├── utils/
+│   ├── zenTokens.js            # Token costs, caps, signup, minigame scale
+│   ├── zenChatProviders.js     # Multi-provider Zen chat (Gemini / Groq / OpenAI)
+│   ├── moodFromKeywords.js     # Keyword-based mood (no API)
+│   └── encryption.js           # Decrypt API keys (e.g. GEMINI_API_KEY_ENCRYPTED)
 ├── constants/
-│   └── theme.ts                # Color themes and design tokens
-├── hooks/                      # Custom React hooks
+├── hooks/
 └── assets/                     # Images and sounds
 ```
 
-## 🚀 Installation & Setup
+## 🚀 Step-by-step setup (get the app running)
 
-### Prerequisites
-- Node.js 18+ and npm
-- Expo CLI (`npm install -g expo-cli`)
-- Expo Go app (for mobile testing)
-- Firebase project
-- Google Gemini API key
+Follow these steps in order so the app runs on your machine (or when someone else clones the repo).
 
-### Steps
+### What you need first
 
-1.  **Clone the repository**
-    ```bash
-    git clone https://github.com/IanKallelOcumen/StressBuster.git
-    cd StressBuster
-    ```
+- **Node.js 18+** and **npm** ([nodejs.org](https://nodejs.org))
+- **Expo Go** on your phone (optional; for testing on device)
+- A **Firebase project** (see Step 4)
+- At least one **AI API key** for Zen Chat: [Gemini](https://ai.google.dev), [Groq](https://console.groq.com), or [OpenAI](https://platform.openai.com)
 
-2.  **Install dependencies**
-    ```bash
-    npm install
-    ```
+---
 
-3.  **Configure Firebase**
-    * Create a Firebase project at [console.firebase.google.com](https://console.firebase.google.com)
-    * Enable Authentication (Email/Password)
-    * Create a Firestore database
-    * Update the `firebaseConfig` object in `app/(tabs)/index.jsx` with your credentials:
-    ```javascript
-    const firebaseConfig = {
-      apiKey: "YOUR_API_KEY",
-      authDomain: "YOUR_PROJECT.firebaseapp.com",
-      projectId: "YOUR_PROJECT_ID",
-      storageBucket: "YOUR_PROJECT.appspot.com",
-      messagingSenderId: "YOUR_SENDER_ID",
-      appId: "YOUR_APP_ID"
-    };
-    ```
+### Step 1: Get the code
 
-4.  **Configure Gemini API**
-    * Get an API key from [ai.google.dev](https://ai.google.dev)
-    * Update the `GEMINI_API_KEY` constant in `app/(tabs)/index.jsx`:
-    ```javascript
-    const GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY';
-    ```
+**If you use Git (clone):**
+```bash
+git clone https://github.com/IanKallelOcumen/StressBuster.git
+cd StressBuster
+```
 
-5.  **Run the application**
-    ```bash
-    npx expo start
-    ```
-    * Press `i` for iOS simulator
-    * Press `a` for Android emulator
-    * Scan QR code with Expo Go for physical device
+**If you downloaded a ZIP:**  
+Unzip it, then open a terminal (PowerShell or Command Prompt) and go into the project folder:
+```bash
+cd path\to\StressBuster
+```
+(Replace `path\to\StressBuster` with the real folder path.)
+
+---
+
+### Step 2: Install dependencies
+
+In the project folder, run:
+
+```bash
+npm install
+```
+
+Wait until it finishes (no errors).
+
+---
+
+### Step 3: Create your `.env` file
+
+The app needs API keys and Firebase config in a file named `.env`. The repo does **not** include `.env` (so secrets stay private). Use the template:
+
+**Windows (Command Prompt or PowerShell):**
+```bash
+copy .env.example .env
+```
+
+**macOS / Linux:**
+```bash
+cp .env.example .env
+```
+
+Then open `.env` in a text editor. You will fill it in during the next steps.
+
+---
+
+### Step 4: Set up Firebase
+
+1. Go to [Firebase Console](https://console.firebase.google.com) and sign in.
+2. **Create a project** (or use an existing one).
+3. **Enable Authentication**
+   - In the left menu: **Build → Authentication → Get started**
+   - Open the **Sign-in method** tab and enable **Email/Password**.
+4. **Create a Firestore database**
+   - **Build → Firestore Database → Create database**
+   - Choose **Start in test mode** (or set rules later).
+   - Pick a region and confirm.
+5. **Get your config**
+   - Project **Settings** (gear) → **General** → scroll to **Your apps**
+   - Add a **Web** app if you don’t have one; copy the `firebaseConfig` object.
+   - Put each value into `.env` as below.
+
+In your `.env` file, set (use your real values from the Firebase config):
+
+```env
+FIREBASE_API_KEY=your_api_key_here
+FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
+FIREBASE_PROJECT_ID=your_project_id
+FIREBASE_STORAGE_BUCKET=your_project.appspot.com
+FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+FIREBASE_APP_ID=your_app_id
+FIREBASE_MEASUREMENT_ID=your_measurement_id
+```
+
+---
+
+### Step 5: Add an AI API key (for Zen Chat)
+
+The app needs at least one of these so the AI chat works. Put the key in `.env`.
+
+**Option A – Gemini (recommended, free tier):**
+1. Go to [Google AI Studio](https://aistudio.google.com/apikey) and create an API key.
+2. In `.env` set:
+   ```env
+   GEMINI_API_KEY=your_gemini_api_key_here
+   ```
+
+**Option B – Groq:**  
+Get a key from [Groq Console](https://console.groq.com) and set:
+```env
+GROQ_API_KEY=your_groq_api_key_here
+```
+
+**Option C – OpenAI:**  
+Get a key from [OpenAI](https://platform.openai.com/api-keys) and set:
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+You can set more than one; the app will use the first one it finds. Optional: set order with  
+`ZEN_PROVIDERS=gemini,groq,openai` in `.env`.
+
+---
+
+### Step 6: Run the app
+
+In the project folder, run:
+
+```bash
+npx expo start
+```
+
+- **Web:** Open the URL shown in the terminal (e.g. `http://localhost:8081`).
+- **Phone:** Install **Expo Go**, then scan the QR code from the terminal.
+- **iOS simulator:** Press `i` in the terminal (Mac only).
+- **Android emulator:** Press `a` in the terminal (if Android Studio is set up).
+
+The app connects to **Firebase in the cloud** using the keys in `.env`. You do **not** need to start any server on your PC.
+
+---
+
+### Step 7 (optional): Firebase emulators
+
+For local development with a local Auth/Firestore, you can run Firebase emulators. This is **optional**; the app works with production Firebase without it.
+
+```bash
+npm run emulators
+```
+
+Requires [Firebase CLI](https://firebase.google.com/docs/cli) and Java. If emulators aren’t running, the app uses your production Firebase project automatically.
+
+---
+
+### Quick checklist
+
+| Step | What to do |
+|------|------------|
+| 1 | Get code: `git clone` or unzip → `cd StressBuster` |
+| 2 | Install: `npm install` |
+| 3 | Env file: `copy .env.example .env` (Windows) or `cp .env.example .env` (Mac/Linux) |
+| 4 | Firebase: Create project, enable Email/Password auth, create Firestore, copy config into `.env` |
+| 5 | AI key: Add at least one of `GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENAI_API_KEY` in `.env` |
+| 6 | Run: `npx expo start` |
+
+If something fails, check that `.env` has no typos, all Firebase fields are set, and at least one AI key is set. See also [TRANSFER_CHECKLIST.md](TRANSFER_CHECKLIST.md) for sharing the project with others.
 
 ## 🎯 Usage
 
 1. **Sign Up/Login** - Create an account with email and password
-2. **Earn Tokens** - Play mini-games to earn Zen Tokens (start with 500)
-3. **Track Mood** - Use the journal to log your emotional state
-4. **Chat with AI** - Spend tokens (10 per message) to talk with the AI companion
-5. **Build Streaks** - Log in daily to maintain your wellness streak
-
-## 🎯 Usage
-
-1. **Sign Up/Login** - Create an account with email and password
-2. **Earn Tokens** - Play mini-games to earn Zen Tokens (start with 500)
-3. **Track Mood** - Use the journal to log your emotional state
-4. **Chat with AI** - Spend tokens (10 per message) to talk with the AI companion
+2. **Earn Tokens** - Play mini-games to earn Zen Tokens (starting balance and rewards in `utils/zenTokens.js`)
+3. **Track Mood** - Use the journal; mood is keyword-based (no API)
+4. **Chat with AI** - Spend Zen tokens per message (cost and daily cap in `utils/zenTokens.js`)
 5. **Build Streaks** - Log in daily to maintain your wellness streak
 
 ## 🌟 Feature Highlights
 
 ### Token Economy System
-- Start with 500 Zen Tokens
-- Earn tokens by playing mini-games (1-15 tokens per game)
-- Spend 10 tokens per AI conversation message
-- Maximum cap of 5000 tokens to encourage balanced usage
+- Configured in `utils/zenTokens.js`: signup grant, per-message cost, daily Zen cap, max balance, minigame scale
+- Start with a small signup grant (e.g. 5 tokens); earn more by playing mini-games (rewards scaled)
+- Zen chat costs tokens per message with a daily message cap to manage API rate limits
+- Mood is keyword-based only (no API calls for mood)
 
 ### Progressive Leveling
 - **Novice** (0-99 tokens) 🌱
@@ -241,10 +337,15 @@ npx expo build:android
 ```
 
 ### Code Structure
-- All main app logic is in `app/(tabs)/index.jsx` (944 lines)
-- Mini-games are modular components in `components/minigames/`
-- Utility screens are in `components/screens/`
-- Shared UI components in `components/ui/`
+- Main app and routing in `app/(tabs)/index.jsx`
+- Config and API keys: `app.config.js` + `.env` (use `.env.example` as template)
+- Mini-games in `components/minigames/`; token scale in `utils/zenTokens.js`
+- Zen chat providers in `utils/zenChatProviders.js`; mood in `utils/moodFromKeywords.js`
+- Shared UI in `components/ui/`
+
+### Repo and .gitignore
+- `.env` and encryption scripts are not committed; only encrypted key *values* in your local `.env` are used at runtime
+- Logs, IDE folders (`.cursor/`, `.gemini/`), Firebase local/emulator files, and dev-only scripts are ignored so the repo stays clean on GitHub
 
 ## 🐛 Known Issues
 
