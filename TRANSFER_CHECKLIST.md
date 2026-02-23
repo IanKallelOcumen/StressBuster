@@ -45,6 +45,10 @@ Use this so the app runs correctly after clone/pull on another machine.
    npx expo start
    ```
 
+5. **Firebase**  
+   The app talks to **Firebase in the cloud** (your project). Nothing starts on your friend’s PC: they just need the same `.env` Firebase keys so the app can connect.  
+   **Firebase emulators** (local Auth/Firestore for dev) do **not** start automatically. To use them they’d run `npm run emulators` separately (needs Firebase CLI and Java).
+
 ## Files that were missing and are now tracked
 
 These were previously untracked and caused “Unable to resolve module” on other PCs. They are now staged/committed so a fresh clone has everything:
