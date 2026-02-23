@@ -1,22 +1,10 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
-
-const BackButton = ({ onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={{
-      position: 'absolute',
-      top: 16,
-      left: 16,
-      zIndex: 999,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      borderRadius: 8,
-      padding: 8
-    }}>
-    <Text style={{ fontSize: 20 }}>←</Text>
-  </TouchableOpacity>
-);
+import { Animated, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { safeHaptics, NotificationFeedbackType } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
 const generateProblem = () => {
   const num1 = Math.floor(Math.random() * 20) + 1;
@@ -34,7 +22,8 @@ const generateProblem = () => {
   return { problem: `${num1} ${operation} ${num2}`, answer, options };
 };
 
-export const MathBlitz = ({ onBack, colors, updateTokens }) => {
+export const MathBlitz = ({ onBack, colors, updateTokens, sfxEnabled }) => {
+  const insets = useSafeAreaInsets();
   const [problem, setProblem] = useState(generateProblem());
   const [score, setScore] = useState(0);
   const [time, setTime] = useState(30);
@@ -44,7 +33,7 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
 
   useEffect(() => {
     if (!gameActive) {
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: Platform.OS !== 'web' }).start();
     }
   }, [gameActive]);
 
@@ -52,7 +41,7 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
     if (!gameActive || time <= 0) {
       setGameActive(false);
       if (score > 0) {
-        const reward = Math.max(1, Math.floor(score / 2));
+        const reward = scaleMinigameReward(Math.max(1, Math.floor(score / 2)));
         updateTokens(reward);
       }
       return;
@@ -66,22 +55,21 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
     if (!gameActive) return;
     
     if (selected === problem.answer) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
       setScore(s => s + 1);
       setFeedback('✓ Correct!');
       setProblem(generateProblem());
       setTimeout(() => setFeedback(''), 1000);
     } else {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Warning);
       setFeedback('✗ Wrong');
       setTimeout(() => setFeedback(''), 800);
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.screenBg, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-      <BackButton onPress={onBack} />
-      
+    <GradientBackground colors={colors}>
+    <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: insets.top + 60, paddingHorizontal: 20, paddingBottom: 20 }}>
       <Text style={{ fontSize: 32, fontWeight: '800', color: colors.text, marginBottom: 10 }}>Math Blitz</Text>
       
       <View style={{ flexDirection: 'row', gap: 20, marginBottom: 40 }}>
@@ -97,19 +85,22 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
 
       {gameActive ? (
         <View style={{ alignItems: 'center', width: '100%', gap: 20 }}>
-          <View style={{
-            backgroundColor: colors.accent + '15',
-            borderRadius: 16,
-            borderWidth: 2,
-            borderColor: colors.accent,
-            paddingVertical: 30,
-            paddingHorizontal: 40,
-            minWidth: 200,
-            alignItems: 'center'
-          }}>
+          <GlassCard
+            colors={colors}
+            color={colors.accent}
+            intensity={20}
+            style={{
+              paddingVertical: 30,
+              paddingHorizontal: 40,
+              minWidth: 200,
+              alignItems: 'center',
+              borderRadius: 16,
+              borderWidth: 2,
+              borderColor: colors.accent
+            }}>
             <Text style={{ fontSize: 28, fontWeight: '700', color: colors.text }}>{problem.problem}</Text>
             <Text style={{ fontSize: 14, color: colors.subtext, marginTop: 8 }}>= ?</Text>
-          </View>
+          </GlassCard>
 
           <Text style={{ fontSize: 16, fontWeight: '600', color: colors.accent, height: 24 }}>
             {feedback}
@@ -120,15 +111,19 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
               <TouchableOpacity
                 key={i}
                 onPress={() => handleAnswer(opt)}
-                style={{
-                  backgroundColor: colors.tileBg,
-                  borderRadius: 12,
-                  paddingVertical: 16,
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor: colors.accent + '40'
-                }}>
-                <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>{opt}</Text>
+                style={{ width: '100%' }}>
+                <GlassCard
+                  colors={colors}
+                  color={colors.tileBg}
+                  style={{
+                    paddingVertical: 16,
+                    alignItems: 'center',
+                    borderRadius: 12,
+                    borderWidth: 2,
+                    borderColor: colors.accent + '40'
+                  }}>
+                  <Text style={{ color: colors.text, fontSize: 18, fontWeight: '600' }}>{opt}</Text>
+                </GlassCard>
               </TouchableOpacity>
             ))}
           </View>
@@ -141,13 +136,9 @@ export const MathBlitz = ({ onBack, colors, updateTokens }) => {
             <Text style={{ color: colors.accent, fontSize: 40, fontWeight: '800' }}>{score}</Text>
             <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600', marginTop: 8 }}>+{Math.max(1, Math.floor(score / 2))} tokens</Text>
           </View>
-          <TouchableOpacity
-            onPress={onBack}
-            style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 20 }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Back to Games</Text>
-          </TouchableOpacity>
         </Animated.View>
       )}
     </View>
+    </GradientBackground>
   );
 };

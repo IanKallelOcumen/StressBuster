@@ -1,9 +1,12 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { safeHaptics, ImpactFeedbackStyle, NotificationFeedbackType } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GradientBackground from '../ui/GradientBackground';
+import GlassCard from '../ui/GlassCard';
 
-export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
+export const BreathingExercise = ({ onBack, colors, updateTokens, sfxEnabled }) => {
   const [isBreathing, setIsBreathing] = useState(false);
   const [phase, setPhase] = useState('ready'); // ready, inhale, hold, exhale
   const [cyclesCompleted, setCyclesCompleted] = useState(0);
@@ -14,11 +17,12 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
     if (!isBreathing) return;
 
     const runCycle = async () => {
+      const useNative = Platform.OS !== 'web';
       // Inhale (4 seconds)
       setPhase('inhale');
       Animated.parallel([
-        Animated.timing(scaleValue, { toValue: 1, duration: 4000, useNativeDriver: true }),
-        Animated.timing(opacityValue, { toValue: 1, duration: 4000, useNativeDriver: true })
+        Animated.timing(scaleValue, { toValue: 1, duration: 4000, useNativeDriver: useNative }),
+        Animated.timing(opacityValue, { toValue: 1, duration: 4000, useNativeDriver: useNative })
       ]).start();
       await new Promise(resolve => setTimeout(resolve, 4000));
 
@@ -29,8 +33,8 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
       // Exhale (6 seconds)
       setPhase('exhale');
       Animated.parallel([
-        Animated.timing(scaleValue, { toValue: 0.5, duration: 6000, useNativeDriver: true }),
-        Animated.timing(opacityValue, { toValue: 0.3, duration: 6000, useNativeDriver: true })
+        Animated.timing(scaleValue, { toValue: 0.5, duration: 6000, useNativeDriver: useNative }),
+        Animated.timing(opacityValue, { toValue: 0.3, duration: 6000, useNativeDriver: useNative })
       ]).start();
       await new Promise(resolve => setTimeout(resolve, 6000));
 
@@ -43,7 +47,7 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
   const startBreathing = () => {
     setIsBreathing(true);
     setCyclesCompleted(0);
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (sfxEnabled) safeHaptics.impactAsync(ImpactFeedbackStyle.Medium);
   };
 
   const stopBreathing = () => {
@@ -53,9 +57,9 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
     opacityValue.setValue(0.3);
     
     if (cyclesCompleted > 0) {
-      const reward = cyclesCompleted * 5;
+      const reward = scaleMinigameReward(cyclesCompleted * 5);
       updateTokens(reward, 'breathing');
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
     }
   };
 
@@ -71,6 +75,7 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
   const insets = useSafeAreaInsets();
   
   return (
+    <GradientBackground colors={colors}>
     <ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingBottom: 40, alignItems: 'center', flex: 1, justifyContent: 'center' }}>
       <Text style={{ fontSize: 28, fontWeight: 'bold', color: colors.text, marginBottom: 10 }}>Breathing Exercise</Text>
       <Text style={{ color: colors.subtext, marginBottom: 30, textAlign: 'center', paddingHorizontal: 20 }}>
@@ -95,8 +100,7 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
         </Animated.View>
       </View>
       
-      <View style={{
-        backgroundColor: colors.tileBg,
+      <GlassCard colors={colors} color={colors.tileBg} style={{
         padding: 20,
         borderRadius: 20,
         marginBottom: 30,
@@ -105,7 +109,7 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
       }}>
         <Text style={{ color: colors.subtext, fontSize: 14 }}>Cycles Completed</Text>
         <Text style={{ color: colors.accent, fontSize: 36, fontWeight: 'bold' }}>{cyclesCompleted}</Text>
-      </View>
+      </GlassCard>
       
       {!isBreathing ? (
         <TouchableOpacity
@@ -131,5 +135,6 @@ export const BreathingExercise = ({ onBack, colors, updateTokens }) => {
         </TouchableOpacity>
       )}
     </ScrollView>
+    </GradientBackground>
   );
 };

@@ -1,22 +1,10 @@
-import * as Haptics from 'expo-haptics';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
-
-const BackButton = ({ onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={{
-      position: 'absolute',
-      top: 16,
-      left: 16,
-      zIndex: 999,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      borderRadius: 8,
-      padding: 8
-    }}>
-    <Text style={{ fontSize: 20 }}>←</Text>
-  </TouchableOpacity>
-);
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { safeHaptics, NotificationFeedbackType } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
 const colorMap = {
   'Red': '#FF6B6B',
@@ -27,8 +15,9 @@ const colorMap = {
   'Orange': '#E67E22'
 };
 
-export const ColorMatch = ({ onBack, colors, updateTokens }) => {
-  const colorNames = Object.keys(colorMap);
+export const ColorMatch = ({ onBack, colors, updateTokens, sfxEnabled }) => {
+  const insets = useSafeAreaInsets();
+  const colorNames = useMemo(() => Object.keys(colorMap), []);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [moves, setMoves] = useState(0);
@@ -37,47 +26,52 @@ export const ColorMatch = ({ onBack, colors, updateTokens }) => {
 
   useEffect(() => {
     if (gameWon) {
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: Platform.OS !== 'web' }).start();
     }
   }, [gameWon]);
 
   const currentColor = colorNames[currentIndex];
-  const wrongColors = colorNames
-    .filter(c => c !== currentColor)
-    .sort(() => Math.random() - 0.5)
-    .slice(0, 2);
-  const options = [currentColor, ...wrongColors].sort(() => Math.random() - 0.5);
+  
+  const options = useMemo(() => {
+    const wrongColors = colorNames
+      .filter(c => c !== currentColor)
+      .sort(() => Math.random() - 0.5)
+      .slice(0, 2);
+    return [currentColor, ...wrongColors].sort(() => Math.random() - 0.5);
+  }, [currentIndex, currentColor, colorNames]);
 
   const handleTap = async (colorName) => {
     const newMoves = moves + 1;
     setMoves(newMoves);
 
     if (colorName === currentColor) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
       const newScore = score + 1;
       setScore(newScore);
 
       if (newScore === 6) {
-        const reward = Math.max(1, 10 - newMoves);
+        const reward = scaleMinigameReward(Math.max(1, 10 - newMoves));
         setGameWon(true);
         updateTokens(reward);
       } else {
         setCurrentIndex((currentIndex + 1) % colorNames.length);
       }
     } else {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Warning);
     }
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.screenBg, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-      <BackButton onPress={onBack} />
-
+    <GradientBackground colors={colors}>
+    <View style={{ flex: 1, justifyContent: 'flex-start', alignItems: 'center', paddingTop: insets.top + 68, paddingHorizontal: 16, paddingBottom: 20 }}>
       <Text style={{ fontSize: 32, fontWeight: '800', color: colors.text, marginBottom: 30 }}>Color Match</Text>
 
       {!gameWon ? (
         <View style={{ alignItems: 'center', gap: 30, width: '100%' }}>
-          <View style={{ flexDirection: 'row', gap: 12 }}>
+          <GlassCard
+            colors={colors}
+            color={colors.tileBg}
+            style={{ flexDirection: 'row', gap: 20, padding: 15, borderRadius: 16 }}>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: colors.subtext, fontSize: 11, fontWeight: '600' }}>Score</Text>
               <Text style={{ color: colors.accent, fontSize: 28, fontWeight: '800' }}>{score}/6</Text>
@@ -86,7 +80,7 @@ export const ColorMatch = ({ onBack, colors, updateTokens }) => {
               <Text style={{ color: colors.subtext, fontSize: 11, fontWeight: '600' }}>Moves</Text>
               <Text style={{ color: colors.accent, fontSize: 28, fontWeight: '800' }}>{moves}</Text>
             </View>
-          </View>
+          </GlassCard>
 
           <View style={{
             width: 140,
@@ -95,11 +89,15 @@ export const ColorMatch = ({ onBack, colors, updateTokens }) => {
             backgroundColor: colorMap[currentColor],
             borderWidth: 4,
             borderColor: colors.accent,
-            shadowColor: colorMap[currentColor],
-            shadowOffset: { width: 0, height: 8 },
-            shadowOpacity: 0.4,
-            shadowRadius: 12,
-            elevation: 8
+            ...(Platform.OS === 'web' ? {
+              boxShadow: `0 8px 12px 0 ${colorMap[currentColor]}66`,
+            } : {
+              shadowColor: colorMap[currentColor],
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 12,
+              elevation: 8
+            })
           }} />
 
           <Text style={{ color: colors.subtext, fontSize: 14, fontWeight: '600' }}>Tap the color name:</Text>
@@ -109,15 +107,19 @@ export const ColorMatch = ({ onBack, colors, updateTokens }) => {
               <TouchableOpacity
                 key={i}
                 onPress={() => handleTap(opt)}
-                style={{
-                  backgroundColor: colors.tileBg,
-                  borderRadius: 12,
-                  paddingVertical: 14,
-                  alignItems: 'center',
-                  borderWidth: 2,
-                  borderColor: colors.accent + '40'
-                }}>
-                <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{opt}</Text>
+                style={{ width: '100%' }}>
+                <GlassCard
+                  colors={colors}
+                  color={colors.tileBg}
+                  style={{
+                    borderRadius: 12,
+                    paddingVertical: 14,
+                    alignItems: 'center',
+                    borderWidth: 2,
+                    borderColor: colors.accent + '40'
+                  }}>
+                  <Text style={{ color: colors.text, fontSize: 16, fontWeight: '600' }}>{opt}</Text>
+                </GlassCard>
               </TouchableOpacity>
             ))}
           </View>
@@ -129,13 +131,9 @@ export const ColorMatch = ({ onBack, colors, updateTokens }) => {
             <Text style={{ color: colors.accent, fontSize: 36, fontWeight: '800' }}>{Math.max(1, 10 - moves)}</Text>
             <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '600', marginTop: 4 }}>tokens earned</Text>
           </View>
-          <TouchableOpacity
-            onPress={onBack}
-            style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Back to Games</Text>
-          </TouchableOpacity>
         </Animated.View>
       )}
     </View>
+    </GradientBackground>
   );
 };

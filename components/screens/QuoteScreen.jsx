@@ -1,6 +1,9 @@
+import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
 const quotes = [
   "Peace begins with a smile.",
@@ -15,11 +18,24 @@ const quotes = [
   "Every breath is a fresh start."
 ];
 
-export const QuoteScreen = ({ onBack, colors }) => {
+export const QuoteScreen = ({ onBack, colors, sfxEnabled }) => {
   const insets = useSafeAreaInsets();
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(30));
-  const randomQuote = quotes[Math.floor(Math.random() * quotes.length)];
+  const [quoteIndex, setQuoteIndex] = useState(Math.floor(Math.random() * quotes.length));
+  
+  const refreshQuote = () => {
+    if (sfxEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    // Simple random pick, maybe same as before
+    let newIndex = Math.floor(Math.random() * quotes.length);
+    // Ensure new quote if possible
+    if (quotes.length > 1) {
+        while (newIndex === quoteIndex) {
+            newIndex = Math.floor(Math.random() * quotes.length);
+        }
+    }
+    setQuoteIndex(newIndex);
+  };
   
   useEffect(() => {
     Animated.parallel([
@@ -29,6 +45,7 @@ export const QuoteScreen = ({ onBack, colors }) => {
   }, []);
   
   return (
+    <GradientBackground colors={colors}>
     <Animated.ScrollView contentContainerStyle={{ 
       paddingTop: insets.top + 68, 
       paddingBottom: insets.bottom + 80, 
@@ -44,20 +61,14 @@ export const QuoteScreen = ({ onBack, colors }) => {
         </View>
 
         {/* Quote Card */}
-        <View style={{
-          backgroundColor: colors.accent + '12',
+        <GlassCard colors={colors} color={colors.accent + '12'} style={{
           borderColor: colors.accent + '30',
           borderWidth: 1.5,
           borderRadius: 24,
           paddingHorizontal: 24,
           paddingVertical: 32,
           alignItems: 'center',
-          gap: 16,
-          shadowColor: colors.accent,
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.1,
-          shadowRadius: 12,
-          elevation: 3
+          gap: 16
         }}>
           <Text style={{ fontSize: 48 }}>💭</Text>
           <Text style={{ 
@@ -68,23 +79,27 @@ export const QuoteScreen = ({ onBack, colors }) => {
             lineHeight: 32,
             fontWeight: '500'
           }}>
-            "{randomQuote}"
+            “{quotes[quoteIndex]}”
           </Text>
-        </View>
+        </GlassCard>
 
         {/* Refresh Button */}
         <TouchableOpacity
-          onPress={() => {}}
+          onPress={refreshQuote}
           style={{
             backgroundColor: colors.accent,
             paddingVertical: 12,
             paddingHorizontal: 24,
             borderRadius: 20,
-            shadowColor: colors.accent,
-            shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: 0.3,
-            shadowRadius: 8,
-            elevation: 4
+            ...(Platform.OS === 'web' ? {
+              boxShadow: `0 4px 8px 0 ${colors.accent}4D`,
+            } : {
+              shadowColor: colors.accent,
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
+              elevation: 4
+            })
           }}>
           <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>New Quote</Text>
         </TouchableOpacity>
@@ -103,5 +118,6 @@ export const QuoteScreen = ({ onBack, colors }) => {
         </View>
       </Animated.View>
     </Animated.ScrollView>
+    </GradientBackground>
   );
 };

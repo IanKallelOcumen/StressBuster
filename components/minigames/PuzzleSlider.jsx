@@ -1,9 +1,12 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
 import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { safeHaptics, ImpactFeedbackStyle, NotificationFeedbackType } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-export const PuzzleSlider = ({ onBack, colors, updateTokens }) => {
+export const PuzzleSlider = ({ onBack, colors, updateTokens, sfxEnabled }) => {
   const [tiles, setTiles] = useState([]);
   const [moves, setMoves] = useState(0);
   const [gameWon, setGameWon] = useState(false);
@@ -45,7 +48,7 @@ export const PuzzleSlider = ({ onBack, colors, updateTokens }) => {
   const handleTap = (index) => {
     if (!canMove(index) || gameWon) return;
 
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (sfxEnabled) safeHaptics.impactAsync(ImpactFeedbackStyle.Medium);
     const emptyIdx = tiles.indexOf(null);
     const newTiles = [...tiles];
     [newTiles[index], newTiles[emptyIdx]] = [newTiles[emptyIdx], newTiles[index]];
@@ -55,13 +58,14 @@ export const PuzzleSlider = ({ onBack, colors, updateTokens }) => {
     // Check win
     const isSolved = newTiles.slice(0, 8).every((t, i) => t === i + 1) && newTiles[8] === null;
     if (isSolved) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
       setGameWon(true);
-      updateTokens(Math.max(1, 10 - Math.floor(moves / 5)), 'puzzle_slider');
+      updateTokens(scaleMinigameReward(Math.max(1, 10 - Math.floor(moves / 5))), 'puzzle_slider');
     }
   };
 
   return (
+    <GradientBackground colors={colors}>
     <ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingHorizontal: 16, paddingBottom: 100 }} showsVerticalScrollIndicator={false}>
       <View style={{ gap: 20, alignItems: 'center' }}>
         <View style={{ gap: 8, alignItems: 'center' }}>
@@ -69,9 +73,9 @@ export const PuzzleSlider = ({ onBack, colors, updateTokens }) => {
           <Text style={{ fontSize: 13, color: colors.subtext }}>Arrange tiles in order</Text>
         </View>
 
-        <View style={{ backgroundColor: colors.accent + '12', borderColor: colors.accent, borderWidth: 2, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' }}>
+        <GlassCard colors={colors} color={colors.tileBg} style={{ borderRadius: 12, paddingVertical: 12, paddingHorizontal: 20, alignItems: 'center' }}>
           <Text style={{ color: colors.subtext, fontSize: 12 }}>Moves: {moves}</Text>
-        </View>
+        </GlassCard>
 
         <View style={{ width: '100%', aspectRatio: 1, gap: 4, flexWrap: 'wrap', flexDirection: 'row', alignContent: 'flex-start' }}>
           {tiles.map((tile, idx) => (
@@ -84,49 +88,49 @@ export const PuzzleSlider = ({ onBack, colors, updateTokens }) => {
                 aspectRatio: 1,
                 padding: 2,
               }}>
-              <View style={{
-                flex: 1,
-                backgroundColor: tile ? colors.accent : colors.tileBg,
-                borderRadius: 8,
-                justifyContent: 'center',
-                alignItems: 'center',
-                opacity: tile ? 1 : 0.3,
-                borderWidth: tile && canMove(idx) ? 1 : 0,
-                borderColor: colors.accent + '50'
-              }}>
+              <GlassCard
+                colors={colors}
+                color={tile ? colors.accent : colors.tileBg}
+                intensity={tile ? 40 : 10}
+                style={{
+                  flex: 1,
+                  borderRadius: 8,
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  opacity: tile ? 1 : 0.3,
+                  borderWidth: tile && canMove(idx) ? 1 : 0,
+                  borderColor: colors.accent + '50'
+                }}>
                 {tile && <Text style={{ fontSize: 24, fontWeight: '800', color: colors.text }}>{tile}</Text>}
-              </View>
+              </GlassCard>
             </TouchableOpacity>
           ))}
         </View>
 
         {gameWon && (
-          <View style={{ backgroundColor: colors.icon.green + '12', borderColor: colors.icon.green, borderWidth: 2, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', width: '100%', gap: 8 }}>
+          <GlassCard colors={colors} color={colors.icon.green} style={{ borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20, alignItems: 'center', width: '100%', gap: 8 }}>
             <Text style={{ color: colors.icon.green, fontSize: 18, fontWeight: '700' }}>🎉 Puzzle Solved!</Text>
             <Text style={{ color: colors.subtext, fontSize: 13 }}>Completed in {moves} moves</Text>
-          </View>
+          </GlassCard>
         )}
 
         {gameWon && (
           <TouchableOpacity
             onPress={initializeGame}
-            style={{
-              backgroundColor: colors.accent,
+            style={{ width: '100%' }}>
+            <GlassCard colors={colors} color={colors.accent} style={{
               paddingVertical: 13,
               paddingHorizontal: 40,
               borderRadius: 12,
               width: '100%',
               alignItems: 'center',
-              shadowColor: colors.accent,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4
             }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>Play Again</Text>
+            </GlassCard>
           </TouchableOpacity>
         )}
       </View>
     </ScrollView>
+    </GradientBackground>
   );
 };

@@ -1,19 +1,23 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Text, TouchableOpacity } from 'react-native';
+import { safeHaptics, NotificationFeedbackType } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-export const FortuneGame = ({ onBack, colors, updateTokens }) => {
+export const FortuneGame = ({ onBack, colors, updateTokens, sfxEnabled }) => {
   const [msg, setMsg] = useState("Tap the cookie!");
   const [cracked, setCracked] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const cookieScale = useRef(new Animated.Value(1)).current;
   
+  const useNative = Platform.OS !== 'web';
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: true })
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: useNative }),
+      Animated.spring(scaleAnim, { toValue: 1, friction: 7, useNativeDriver: useNative })
     ]).start();
   }, [fadeAnim, scaleAnim]);
   
@@ -32,14 +36,14 @@ export const FortuneGame = ({ onBack, colors, updateTokens }) => {
 
   const crack = () => {
     Animated.sequence([
-      Animated.timing(cookieScale, { toValue: 1.2, duration: 150, useNativeDriver: true }),
-      Animated.timing(cookieScale, { toValue: 1, duration: 150, useNativeDriver: true })
+      Animated.timing(cookieScale, { toValue: 1.2, duration: 150, useNativeDriver: useNative }),
+      Animated.timing(cookieScale, { toValue: 1, duration: 150, useNativeDriver: useNative })
     ]).start();
-    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
     const f = fortunes[Math.floor(Math.random() * fortunes.length)];
     setMsg(f);
     setCracked(true);
-    updateTokens(5, "fortune");
+    updateTokens(scaleMinigameReward(5), "fortune");
     
     setTimeout(() => {
       setCracked(false);
@@ -50,8 +54,9 @@ export const FortuneGame = ({ onBack, colors, updateTokens }) => {
   const insets = useSafeAreaInsets();
   
   return (
+    <GradientBackground colors={colors}>
     <Animated.ScrollView 
-      contentContainerStyle={{ paddingTop: insets.top + 68, paddingBottom: 40, alignItems: 'center' }}
+      contentContainerStyle={{ paddingTop: insets.top + 68, paddingHorizontal: 16, paddingBottom: 40, alignItems: 'center' }}
       style={{ opacity: fadeAnim }}
     >
       <Animated.View style={{ alignItems: 'center', transform: [{ scale: scaleAnim }] }}>
@@ -65,12 +70,12 @@ export const FortuneGame = ({ onBack, colors, updateTokens }) => {
         </TouchableOpacity>
       </Animated.View>
       
-      <View style={{
+      <GlassCard colors={colors} color={colors.tileBg} style={{
         marginTop: 30,
         padding: 20,
-        backgroundColor: colors.tileBg,
         borderRadius: 24,
-        minWidth: 280,
+        width: '100%',
+        maxWidth: 360,
         alignItems: 'center'
       }}>
         <Text style={{
@@ -79,9 +84,10 @@ export const FortuneGame = ({ onBack, colors, updateTokens }) => {
           textAlign: 'center',
           fontStyle: 'italic'
         }}>
-          "{msg}"
+          “{msg}”
         </Text>
-      </View>
+      </GlassCard>
     </Animated.ScrollView>
+    </GradientBackground>
   );
 };

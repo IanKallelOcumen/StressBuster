@@ -1,8 +1,11 @@
+import * as Haptics from 'expo-haptics';
 import { useEffect, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-export const TimerScreen = ({ onBack, colors }) => {
+export const TimerScreen = ({ onBack, colors, sfxEnabled }) => {
   const [seconds, setSeconds] = useState(25 * 60);
   const [isActive, setIsActive] = useState(false);
   const [sessions, setSessions] = useState(0);
@@ -10,12 +13,13 @@ export const TimerScreen = ({ onBack, colors }) => {
   const [fadeAnim] = useState(new Animated.Value(0));
   const [slideAnim] = useState(new Animated.Value(20));
   
+  const useNativeDriver = Platform.select({ web: false, default: true });
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true })
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver })
     ]).start();
-  }, []);
+  }, [useNativeDriver]);
 
   useEffect(() => {
     let interval = null;
@@ -25,12 +29,12 @@ export const TimerScreen = ({ onBack, colors }) => {
       setIsActive(false);
       setSessions(s => s + 1);
       Animated.sequence([
-        Animated.timing(scaleValue, { toValue: 1.2, duration: 100, useNativeDriver: true }),
-        Animated.timing(scaleValue, { toValue: 1, duration: 100, useNativeDriver: true })
+        Animated.timing(scaleValue, { toValue: 1.2, duration: 100, useNativeDriver }),
+        Animated.timing(scaleValue, { toValue: 1, duration: 100, useNativeDriver })
       ]).start();
     }
     return () => clearInterval(interval);
-  }, [isActive, seconds]);
+  }, [isActive, seconds, useNativeDriver]);
 
   const insets = useSafeAreaInsets();
   const minutes = Math.floor(seconds / 60);
@@ -38,6 +42,7 @@ export const TimerScreen = ({ onBack, colors }) => {
   const progress = ((25 * 60 - seconds) / (25 * 60)) * 100;
   
   return (
+    <GradientBackground colors={colors}>
     <Animated.ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingBottom: insets.bottom + 80, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 20 }} showsVerticalScrollIndicator={false} style={{ opacity: fadeAnim }}>
       <Animated.View style={{ gap: 20, alignItems: 'center', width: '100%', transform: [{ translateY: slideAnim }] }}>
         <View style={{ gap: 4 }}>
@@ -47,11 +52,10 @@ export const TimerScreen = ({ onBack, colors }) => {
 
         {/* Timer Display */}
         <Animated.View style={{ transform: [{ scale: scaleValue }] }}>
-          <View style={{ 
+          <GlassCard colors={colors} color={colors.accent + '12'} style={{ 
             width: 220,
             height: 220, 
             borderRadius: 110, 
-            backgroundColor: colors.accent + '12',
             borderWidth: 2,
             borderColor: colors.accent,
             alignItems: 'center', 
@@ -61,7 +65,7 @@ export const TimerScreen = ({ onBack, colors }) => {
             <Text style={{ fontSize: 64, fontWeight: '800', color: colors.accent, fontFamily: 'monospace' }}>
               {minutes.toString().padStart(2, '0')}:{secs.toString().padStart(2, '0')}
             </Text>
-          </View>
+          </GlassCard>
         </Animated.View>
 
         {/* Progress Bar */}
@@ -75,7 +79,10 @@ export const TimerScreen = ({ onBack, colors }) => {
         {/* Controls */}
         <View style={{ flexDirection: 'row', gap: 12, width: '100%', justifyContent: 'center' }}>
           <TouchableOpacity
-            onPress={() => setIsActive(!isActive)}
+            onPress={() => {
+              if (sfxEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setIsActive(!isActive);
+            }}
             style={{
               backgroundColor: colors.accent,
               paddingVertical: 14,
@@ -83,11 +90,15 @@ export const TimerScreen = ({ onBack, colors }) => {
               borderRadius: 24,
               minWidth: 120,
               alignItems: 'center',
-              shadowColor: colors.accent,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: 0.3,
-              shadowRadius: 8,
-              elevation: 4
+              ...(Platform.OS === 'web' ? {
+                boxShadow: `0 4px 8px 0 ${colors.accent}4D`,
+              } : {
+                shadowColor: colors.accent,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+                elevation: 4
+              })
             }}>
             <Text style={{ color: '#fff', fontWeight: '600', fontSize: 15 }}>
               {isActive ? "Pause" : "Start"}
@@ -95,7 +106,10 @@ export const TimerScreen = ({ onBack, colors }) => {
           </TouchableOpacity>
           
           <TouchableOpacity
-            onPress={() => { setSeconds(25 * 60); setIsActive(false); }}
+            onPress={() => {
+              if (sfxEnabled) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+              setSeconds(25 * 60); setIsActive(false);
+            }}
             style={{
               backgroundColor: colors.tileBg,
               paddingVertical: 14,
@@ -128,5 +142,6 @@ export const TimerScreen = ({ onBack, colors }) => {
         </View>
       </Animated.View>
     </Animated.ScrollView>
+    </GradientBackground>
   );
 };

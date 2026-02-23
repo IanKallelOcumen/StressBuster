@@ -1,9 +1,12 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Switch, Text, View } from 'react-native';
+import { Alert, Animated, Platform, Switch, Text, View } from 'react-native';
+import { safeHaptics, ImpactFeedbackStyle } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-export const SwitchGame = ({ onBack, colors, updateTokens }) => {
+export const SwitchGame = ({ onBack, colors, updateTokens, sfxEnabled }) => {
   const [switches, setSwitches] = useState([false, false, false, false, false]);
   const [count, setCount] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -11,13 +14,13 @@ export const SwitchGame = ({ onBack, colors, updateTokens }) => {
   
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }),
-      Animated.timing(slideAnim, { toValue: 0, duration: 450, useNativeDriver: true })
+      Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: Platform.OS !== 'web' }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 450, useNativeDriver: Platform.OS !== 'web' })
     ]).start();
   }, [fadeAnim, slideAnim]);
 
   const toggle = i => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    if (sfxEnabled) safeHaptics.impactAsync(ImpactFeedbackStyle.Medium);
     const n = [...switches];
     n[i] = !n[i];
     setSwitches(n);
@@ -26,14 +29,16 @@ export const SwitchGame = ({ onBack, colors, updateTokens }) => {
     setCount(c);
     
     if (c % 20 === 0) {
-      updateTokens(5, "switch");
-      Alert.alert("+5 Tokens", "Satisfying!");
+      const reward = scaleMinigameReward(5);
+      updateTokens(reward, "switch");
+      Alert.alert(`+${reward} Tokens`, "Satisfying!");
     }
   };
 
   const insets = useSafeAreaInsets();
   
   return (
+    <GradientBackground colors={colors}>
     <Animated.ScrollView 
       contentContainerStyle={{ paddingTop: insets.top + 68, paddingBottom: 40, alignItems: 'center' }}
       style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}
@@ -44,13 +49,16 @@ export const SwitchGame = ({ onBack, colors, updateTokens }) => {
       
       <View style={{ gap: 16 }}>
         {switches.map((v, i) => (
-          <View
+          <GlassCard
             key={i}
+            colors={colors}
+            color={v ? colors.accent : colors.tileBg}
+            intensity={v ? 30 : 10}
             style={{
               flexDirection: 'row',
               width: 200,
               justifyContent: 'space-between',
-              backgroundColor: colors.tileBg,
+              alignItems: 'center',
               padding: 15,
               borderRadius: 16
             }}>
@@ -60,9 +68,10 @@ export const SwitchGame = ({ onBack, colors, updateTokens }) => {
               onValueChange={() => toggle(i)}
               trackColor={{ true: colors.accent }}
             />
-          </View>
+          </GlassCard>
         ))}
       </View>
     </Animated.ScrollView>
+    </GradientBackground>
   );
 };

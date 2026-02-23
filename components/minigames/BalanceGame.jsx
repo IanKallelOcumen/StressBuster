@@ -1,24 +1,13 @@
-import * as Haptics from 'expo-haptics';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Text, TouchableOpacity, View } from 'react-native';
+import { Animated, Platform, Text, TouchableOpacity, View } from 'react-native';
+import { safeHaptics } from '../../utils/haptics';
+import { scaleMinigameReward } from '../../utils/zenTokens';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-const BackButton = ({ onPress }) => (
-  <TouchableOpacity
-    onPress={onPress}
-    style={{
-      position: 'absolute',
-      top: 16,
-      left: 16,
-      zIndex: 999,
-      backgroundColor: 'rgba(0,0,0,0.5)',
-      borderRadius: 8,
-      padding: 8
-    }}>
-    <Text style={{ fontSize: 20 }}>←</Text>
-  </TouchableOpacity>
-);
-
-export const BalanceGame = ({ onBack, colors, updateTokens }) => {
+export const BalanceGame = ({ onBack, colors, updateTokens, sfxEnabled }) => {
+  const insets = useSafeAreaInsets();
   const [balance, setBalance] = useState(50);
   const [score, setScore] = useState(0);
   const [gameActive, setGameActive] = useState(true);
@@ -28,14 +17,14 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
 
   useEffect(() => {
     if (!gameActive) {
-      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: true }).start();
+      Animated.spring(scaleAnim, { toValue: 1, useNativeDriver: Platform.OS !== 'web' }).start();
     }
   }, [gameActive]);
 
   useEffect(() => {
     if (!gameActive || time <= 0) {
       setGameActive(false);
-      const reward = Math.max(1, Math.floor(score / 5));
+      const reward = scaleMinigameReward(Math.max(1, Math.floor(score / 5)));
       updateTokens(reward);
       return;
     }
@@ -67,7 +56,7 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
   const handleTap = async (direction) => {
     if (!gameActive) return;
 
-    await Haptics.selectionAsync();
+    if (sfxEnabled) safeHaptics.selectionAsync();
     if (direction === 'left') {
       setBalance(b => Math.max(10, b - 15));
     } else {
@@ -78,14 +67,16 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
   const isBalanced = Math.abs(balance - 50) < 12;
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.screenBg, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-      <BackButton onPress={onBack} />
-
-      <Text style={{ fontSize: 32, fontWeight: '800', color: colors.text, marginBottom: 20 }}>Balance Beam</Text>
+    <GradientBackground colors={colors}>
+    <View style={{ flex: 1, alignItems: 'center', paddingTop: insets.top + 68, paddingHorizontal: 16, paddingBottom: insets.bottom + 40 }}>
+      <Text style={{ fontSize: 32, fontWeight: '800', color: colors.text, marginBottom: 20, textAlign: 'center' }}>Balance Beam</Text>
 
       {gameActive ? (
         <View style={{ alignItems: 'center', width: '100%', gap: 30 }}>
-          <View style={{ flexDirection: 'row', gap: 20 }}>
+          <GlassCard
+            colors={colors}
+            color={colors.tileBg}
+            style={{ flexDirection: 'row', gap: 20, padding: 15, borderRadius: 16 }}>
             <View style={{ alignItems: 'center' }}>
               <Text style={{ color: colors.subtext, fontSize: 11, fontWeight: '600' }}>Score</Text>
               <Text style={{ color: colors.accent, fontSize: 28, fontWeight: '800' }}>{score}</Text>
@@ -94,7 +85,7 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
               <Text style={{ color: colors.subtext, fontSize: 11, fontWeight: '600' }}>Time</Text>
               <Text style={{ color: colors.accent, fontSize: 28, fontWeight: '800' }}>{time}</Text>
             </View>
-          </View>
+          </GlassCard>
 
           <View style={{ alignItems: 'center', gap: 8, width: '100%' }}>
             <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '600' }}>Keep it balanced ⚖️</Text>
@@ -132,29 +123,35 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
           <View style={{ flexDirection: 'row', gap: 12, width: '100%' }}>
             <TouchableOpacity
               onPress={() => handleTap('left')}
-              style={{
-                flex: 1,
-                backgroundColor: colors.tileBg,
-                borderRadius: 12,
-                paddingVertical: 16,
-                alignItems: 'center',
-                borderWidth: 2,
-                borderColor: colors.accent + '40'
-              }}>
-              <Text style={{ fontSize: 24 }}>←</Text>
+              style={{ flex: 1 }}>
+              <GlassCard
+                colors={colors}
+                color={colors.tileBg}
+                style={{
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: colors.accent + '40'
+                }}>
+                <Text style={{ fontSize: 24 }}>←</Text>
+              </GlassCard>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => handleTap('right')}
-              style={{
-                flex: 1,
-                backgroundColor: colors.tileBg,
-                borderRadius: 12,
-                paddingVertical: 16,
-                alignItems: 'center',
-                borderWidth: 2,
-                borderColor: colors.accent + '40'
-              }}>
-              <Text style={{ fontSize: 24 }}>→</Text>
+              style={{ flex: 1 }}>
+              <GlassCard
+                colors={colors}
+                color={colors.tileBg}
+                style={{
+                  borderRadius: 12,
+                  paddingVertical: 16,
+                  alignItems: 'center',
+                  borderWidth: 2,
+                  borderColor: colors.accent + '40'
+                }}>
+                <Text style={{ fontSize: 24 }}>→</Text>
+              </GlassCard>
             </TouchableOpacity>
           </View>
         </View>
@@ -166,13 +163,9 @@ export const BalanceGame = ({ onBack, colors, updateTokens }) => {
             <Text style={{ color: colors.accent, fontSize: 40, fontWeight: '800' }}>{score}</Text>
             <Text style={{ color: colors.accent, fontSize: 14, fontWeight: '600', marginTop: 8 }}>+{Math.max(1, Math.floor(score / 5))} tokens</Text>
           </View>
-          <TouchableOpacity
-            onPress={onBack}
-            style={{ backgroundColor: colors.accent, borderRadius: 12, paddingVertical: 12, paddingHorizontal: 24, marginTop: 16 }}>
-            <Text style={{ color: '#fff', fontWeight: '600', fontSize: 14 }}>Back to Games</Text>
-          </TouchableOpacity>
         </Animated.View>
       )}
     </View>
+    </GradientBackground>
   );
 };

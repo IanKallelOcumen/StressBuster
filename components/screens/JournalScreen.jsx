@@ -1,41 +1,26 @@
-import { BlurView } from 'expo-blur';
 import { addDoc, collection, doc, limit, onSnapshot, orderBy, query, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { safeHaptics, ImpactFeedbackStyle, NotificationFeedbackType } from '../../utils/haptics';
+import { moodFromKeywords } from '../../utils/moodFromKeywords';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, FlatList, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Animated, FlatList, Platform, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import GlassCard from '../ui/GlassCard';
+import GradientBackground from '../ui/GradientBackground';
 
-const GlassCard = ({ children, style, colors, backgroundColor, borderColor }) => (
-  <BlurView intensity={85} tint={colors.blurTint} style={{ borderRadius: 20, overflow: 'hidden' }}>
-    <View style={[{
-      backgroundColor: backgroundColor || colors.tileBg,
-      borderRadius: 20,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: borderColor || colors.accent + '15',
-      shadowColor: colors.text,
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 12,
-      elevation: 3
-    }, style]}>
-      {children}
-    </View>
-  </BlurView>
-);
-
-export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detectMoodFromText, setProfileLocally }) => {
+export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, setProfileLocally, sfxEnabled }) => {
   const [entries, setEntries] = useState([]);
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
   const slideInAnim = useRef(new Animated.Value(100)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
 
+  const useNativeDriver = Platform.OS !== 'web';
   useEffect(() => {
     Animated.parallel([
-      Animated.timing(slideInAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
-      Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver: true })
+      Animated.timing(slideInAnim, { toValue: 0, duration: 400, useNativeDriver }),
+      Animated.timing(opacityAnim, { toValue: 1, duration: 400, useNativeDriver })
     ]).start();
-  }, [slideInAnim, opacityAnim]);
+  }, [slideInAnim, opacityAnim, useNativeDriver]);
 
   useEffect(() => {
     if (!user) return;
@@ -50,15 +35,17 @@ export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detect
 
   const save = async () => {
     if (!note.trim()) return;
+    if (sfxEnabled) safeHaptics.impactAsync(ImpactFeedbackStyle.Medium);
     setSaving(true);
     
     try {
+      if (sfxEnabled) safeHaptics.notificationAsync(NotificationFeedbackType.Success);
       await addDoc(collection(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/journal`), {
         text: note,
         createdAt: serverTimestamp()
       });
       
-      const mood = await detectMoodFromText(note);
+      const mood = moodFromKeywords(note);
       await updateDoc(doc(db, `artifacts/${firebaseConfig.appId}/users/${user.uid}/data/profile`), {
         lastMood: mood.emoji,
         lastMoodLabel: mood.label,
@@ -80,15 +67,16 @@ export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detect
   const insets = useSafeAreaInsets();
   
   return (
-    <Animated.ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingHorizontal: 14, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false} style={{ opacity: opacityAnim, transform: [{ translateY: slideInAnim }] }}>
-      <Animated.View style={{ marginBottom: 20, opacity: opacityAnim }}>
-        <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text }}>Journal</Text>
-        <Text style={{ fontSize: 14, color: colors.subtext, marginTop: 4 }}>Capture your thoughts and feelings</Text>
-      </Animated.View>
-      
-      <GlassCard colors={colors} backgroundColor={colors.accent + '08'} borderColor={colors.accent + '30'}>
+    <GradientBackground colors={colors}>
+    <Animated.ScrollView contentContainerStyle={{ paddingTop: insets.top + 68, paddingHorizontal: 16, paddingBottom: insets.bottom + 80 }} showsVerticalScrollIndicator={false} style={{ opacity: opacityAnim, transform: [{ translateY: slideInAnim }] }}>
+        <Animated.View style={{ marginBottom: 20, opacity: opacityAnim, paddingLeft: 52 }}>
+          <Text style={{ fontSize: 28, fontWeight: '800', color: colors.text }}>Journal</Text>
+          <Text style={{ fontSize: 14, color: colors.subtext, marginTop: 4 }}>Capture your thoughts and feelings</Text>
+        </Animated.View>
+        
+        <GlassCard colors={colors} color={colors.accent + '08'} style={{ borderColor: colors.accent + '30', paddingHorizontal: 14, paddingVertical: 12 }}>
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Today's Entry</Text>
+          <Text style={{ color: colors.subtext, fontSize: 12, fontWeight: '500', textTransform: 'uppercase', letterSpacing: 0.5 }}>Today’s Entry</Text>
           <TextInput
             multiline
             value={note}
@@ -120,11 +108,15 @@ export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detect
               flexDirection: 'row',
               justifyContent: 'center',
               gap: 8,
-              shadowColor: colors.accent,
-              shadowOffset: { width: 0, height: 4 },
-              shadowOpacity: saving || !note.trim() ? 0 : 0.3,
-              shadowRadius: 8,
-              elevation: saving || !note.trim() ? 0 : 4
+              ...(Platform.OS === 'web' ? {
+                boxShadow: saving || !note.trim() ? 'none' : `0 4px 8px 0 ${colors.accent}4D`,
+              } : {
+                shadowColor: colors.accent,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: saving || !note.trim() ? 0 : 0.3,
+                shadowRadius: 8,
+                elevation: saving || !note.trim() ? 0 : 4
+              })
             }}>
             {saving ? (
               <ActivityIndicator color="#fff" size="small" />
@@ -144,8 +136,8 @@ export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detect
             keyExtractor={i => i.id}
             scrollEnabled={false}
             renderItem={({ item }) => (
-              <GlassCard colors={colors} backgroundColor={colors.tileBg} borderColor={colors.accent + '10'} style={{ marginBottom: 10 }}>
-                <Text style={{ color: colors.text, fontSize: 14, lineHeight: 20 }}>{item.text}</Text>
+              <GlassCard colors={colors} color={colors.tileBg} style={{ marginBottom: 10, borderColor: colors.accent + '10', paddingHorizontal: 16, paddingVertical: 14 }}>
+                <Text style={{ color: colors.text, fontSize: 14, lineHeight: 20 }} numberOfLines={8}>{item.text}</Text>
                 {item.createdAt && (
                   <Text style={{ color: colors.subtext, fontSize: 11, marginTop: 10 }}>
                     {new Date(item.createdAt.toDate?.() || item.createdAt).toLocaleDateString()}
@@ -164,5 +156,6 @@ export const JournalScreen = ({ onBack, colors, user, db, firebaseConfig, detect
         </View>
       )}
     </Animated.ScrollView>
+    </GradientBackground>
   );
 };
