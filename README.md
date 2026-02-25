@@ -268,6 +268,18 @@ Requires [Firebase CLI](https://firebase.google.com/docs/cli) and Java. If emula
 
 ---
 
+### Deploy Firebase rules (after first setup or when you change rules)
+
+If you use the Firebase CLI and have run `firebase login` and `firebase use <project-id>` (or have a `.firebaserc` with your project), deploy Firestore and Storage rules with:
+
+```bash
+npm run deploy:rules
+```
+
+Or deploy everything: `firebase deploy`. Rules live in `firestore.rules`, `storage.rules`, and `database.rules.json` (Realtime DB is locked down; app uses Firestore + Storage). If Storage deploy fails, enable Storage in the Firebase Console first (**Build → Storage → Get started**).
+
+---
+
 ### Quick checklist
 
 | Step | What to do |

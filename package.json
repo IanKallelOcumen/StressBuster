@@ -11,7 +11,8 @@
     "web:clear": "expo start --web --clear",
     "lint": "expo lint",
     "emulators": "firebase emulators:start",
-    "emulators:start": "powershell -ExecutionPolicy Bypass -File ./start-emulators.ps1"
+    "emulators:start": "powershell -ExecutionPolicy Bypass -File ./start-emulators.ps1",
+    "deploy:rules": "firebase deploy --only firestore:rules,storage"
   },
   "dependencies": {
     "@expo/metro-runtime": "~3.2.3",
