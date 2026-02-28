@@ -1,6 +1,6 @@
 # Learn more https://docs.github.com/en/get-started/getting-started-with-git/ignoring-files
 
-# dependencies
+# Dependencies
 node_modules/
 
 # Expo
@@ -21,23 +21,60 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
-# debug
+# Debug & logs
 npm-debug.*
 yarn-debug.*
 yarn-error.*
+*.log
+*-debug.log
 
 # macOS
 .DS_Store
 *.pem
 
-# local env files
+# Local env (secrets stay local; commit .env.example as template only)
+.env
 .env*.local
 
-# typescript
+# Encryption tool only (do not commit; app uses encrypted keys from .env via utils/encryption.js)
+scripts/encrypt-api-key.js
+
+# Dev-only scripts (token updates, emulators, ports)
+scripts/update-dev-tokens.js
+scripts/update-dev-tokens-browser.js
+scripts/update-dev-tokens-inline.js
+scripts/check-ports.ps1
+scripts/find-and-start-emulators.ps1
+scripts/find-java-corrected.ps1
+scripts/setup-java.ps1
+scripts/setup-java-21.ps1
+scripts/start-emulators.ps1
+scripts/simple-check-ports.ps1
+scripts/use-java-21.ps1
+
+# IDE / local tooling
+.cursor/
+.gemini/
+
+# Firebase local / emulator / generated
+.firebase/
+apphosting.emulator.yaml
+firebase-backup.json
+firebase-config-optimized.js
+firebase-optimized-schema.js
+firebase-optimized.json
+dataconnect/
+
+# Test / mock artifacts
+fake-home/
+mock-*.js
+mock-*.mjs
+
+# TypeScript
 *.tsbuildinfo
 
 app-example
 
-# generated native folders
+# Generated native folders
 /ios
 /android

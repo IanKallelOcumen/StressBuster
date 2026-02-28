@@ -3,165 +3,97 @@
 ## ✅ What Changed (Latest Update)
 
 **NEW FEATURES:**
-- ✅ **500 Token Cap** - Maximum 500 tokens to keep the game balanced
-- ✅ **4 New Minigames** - Spin Wheel, Tap Counter, Pattern Repeat, Breathing Exercise
-- ✅ **Removed Modal** - Daily rewards now auto-claim with alert notification
-- ✅ **10 Total Minigames** - Double the fun!
+- ✅ **22 Total Minigames** - A huge variety of stress-busting activities!
+- ✅ **Optimized Performance** - Minigames now use efficient rendering and cleanup.
+- ✅ **Standardized UI** - Consistent back buttons and layout across all games.
+- ✅ **Cleaned Codebase** - Removed redundant assets and components.
 
-The massive 731-line `index.jsx` has been reorganized into smaller, maintainable files:
-- **Now: ~700 lines** in main + organized components
-- Separated minigames into individual files
-- Extracted screen components for better organization
+The `index.jsx` now serves as a clean router, importing optimized components from the `components/minigames` directory.
 
 ## 📁 New Structure
 
 ```
 components/
 ├── minigames/
-│   ├── index.js              # Easy imports
-│   ├── ZenMatch.jsx          # Memory card game (+10 tokens)
-│   ├── PopBubbles.jsx        # Bubble popping (+1 token each)
-│   ├── Switches.jsx          # Haptic switch toggling  
-│   ├── ColorCalm.jsx         # Color tapping game
-│   ├── ZenGrid.jsx           # Light up grid puzzle
-│   ├── DailyFortune.jsx      # Fortune cookie (+5 tokens)
-│   ├── SpinWheel.jsx         # Random prize spinner (NEW!)
-│   ├── TapCounter.jsx        # Speed tapping challenge (NEW!)
-│   ├── PatternRepeat.jsx     # Simon-says memory game (NEW!)
-│   └── BreathingExercise.jsx # Guided breathing (+5/cycle) (NEW!)
+│   ├── index.js              # Central export file
+│   ├── ZenMatch.jsx          # Memory card game
+│   ├── PopBubbles.jsx        # Bubble popping
+│   ├── Switches.jsx          # Haptic switches
+│   ├── ColorCalm.jsx         # Color tapping
+│   ├── ZenGrid.jsx           # Grid puzzle
+│   ├── DailyFortune.jsx      # Fortune cookies
+│   ├── SpinWheel.jsx         # Prize wheel
+│   ├── TapCounter.jsx        # Speed tapping
+│   ├── BreathingExercise.jsx # Guided breathing
+│   ├── NumberGuesser.jsx     # High/Low game
+│   ├── SimonSays.jsx         # Memory pattern
+│   ├── ReflexGame.jsx        # Reaction time
+│   ├── PuzzleSlider.jsx      # Sliding puzzle
+│   ├── WordChain.jsx         # Word association
+│   ├── MathBlitz.jsx         # Speed math
+│   ├── ColorMatch.jsx        # Stroop test
+│   ├── SpeedTap.jsx          # Sequential tapping
+│   ├── BalanceGame.jsx       # Gyro/Tap balance
+│   ├── MandalaDraw.jsx       # Mandala drawing
+│   ├── MemoryMatrix.jsx      # Grid memory
+│   ├── FocusHold.jsx         # Focus timer
+│   └── EmojiCatch.jsx        # Catching game
 │
 └── screens/
-    ├── index.js              # Easy imports
-    ├── AIChatScreen.jsx      # Zen AI companion
-    ├── SoundScreen.jsx       # Soundscapes (rain, forest, waves)
-    ├── TimerScreen.jsx       # 25-minute focus timer
-    ├── QuoteScreen.jsx       # Daily motivational quotes
-    ├── JournalScreen.jsx     # Mood journaling
-    └── InsightsScreen.jsx    # Stats & wellness metrics
+    ├── AIChatScreen.jsx      # AI Companion
+    ├── SoundScreen.jsx       # Soundscapes
+    ├── TimerScreen.jsx       # Focus Timer
+    ├── QuoteScreen.jsx       # Daily Quotes
+    ├── JournalScreen.jsx     # Mood Journal
+    └── InsightsScreen.jsx    # Analytics
 ```
 
-## 🎯 All 10 Minigames
+## 🎯 All 22 Minigames
 
-### 1. **Zen Match** 🎴
-- Memory card matching game
-- Rewards: +10 Tokens on completion
-- File: `components/minigames/ZenMatch.jsx`
-
-### 2. **Pop Bubbles** 🫧
-- Satisfying bubble popping for stress relief
-- Rewards: +1 Token per pop
-- File: `components/minigames/PopBubbles.jsx`
-
-### 3. **Switches** 🎚️
-- Haptic feedback switch toggling
-- Rewards: +5 Tokens every 20 flips
-- File: `components/minigames/Switches.jsx`
-
-### 4. **Color Calm** 🎨
-- Tap to change colors
-- Rewards: +5 Tokens every 20 taps
-- File: `components/minigames/ColorCalm.jsx`
-
-### 5. **Zen Grid** 💡
-- Light up all squares puzzle
-- Rewards: +10 Tokens on completion
-- File: `components/minigames/ZenGrid.jsx`
-
-### 6. **Daily Fortune** 🥠
-- Crack fortune cookies for wisdom
-- Rewards: +5 Tokens per cookie
-- File: `components/minigames/DailyFortune.jsx`
-
-### 7. **Spin Wheel** 🎡 (NEW!)
-- Spin for random token prizes (1-20)
-- Rewards: Random (1, 3, 5, 10, 15, or 20 tokens)
-- File: `components/minigames/SpinWheel.jsx`
-
-### 8. **Tap Counter** ⚡ (NEW!)
-- Tap as fast as you can in 10 seconds
-- Rewards: 2-20 Tokens based on speed (40+ taps gets rewards)
-- File: `components/minigames/TapCounter.jsx`
-
-### 9. **Pattern Repeat** 🧩 (NEW!)
-- Simon-says style memory game
-- Rewards: 5 Tokens per level completed
-- File: `components/minigames/PatternRepeat.jsx`
-
-### 10. **Breathing Exercise** 🧘 (NEW!)
-- Guided 4-4-6 breathing cycles
-- Rewards: +5 Tokens per completed cycle
-- File: `components/minigames/BreathingExercise.jsx`
+| Game | Description | Reward |
+|------|-------------|--------|
+| **Zen Match** | Classic memory card matching | +10 Tokens |
+| **Pop Bubbles** | Infinite bubble wrap popping | +1 Token/pop |
+| **Switches** | Satisfying toggle switches | +5 Tokens/20 flips |
+| **Color Calm** | Relaxing color transitions | +5 Tokens/20 taps |
+| **Zen Grid** | Light-out style puzzle | +10 Tokens |
+| **Daily Fortune** | Open a fortune cookie | +5 Tokens |
+| **Spin Wheel** | Daily prize wheel | 1-20 Tokens |
+| **Tap Counter** | Tap fast in 10 seconds | Based on speed |
+| **Breathing** | 4-7-8 Breathing guide | +5 Tokens/cycle |
+| **Number Guesser** | Guess the number (1-100) | Based on attempts |
+| **Simon Says** | Repeat the pattern | Based on length |
+| **Reflex Game** | Tap when color changes | Based on reaction |
+| **Puzzle Slider** | 15-puzzle sliding block | Based on moves |
+| **Word Chain** | Form words from letters | Based on word length |
+| **Math Blitz** | Speed arithmetic | Based on score |
+| **Color Match** | Match text color, not word | Based on score |
+| **SpeedTap** | Tap numbers 1-9 in order | Based on speed |
+| **Balance Beam** | Keep the bar centered | Based on time |
+| **Mandala Draw** | Create symmetrical art | +10 Tokens |
+| **Memory Matrix** | Recall grid patterns | +10 Tokens |
+| **Focus Flame** | Hold button to focus | +10 Tokens |
+| **Emoji Rain** | Catch positive emojis | +1 Token/catch |
 
 ## 🚀 How to Use
 
 ### Importing Minigames
 ```javascript
-import { MemoryGame, BubbleGame, ZenGrid } from '@/components/minigames';
-```
-
-### Importing Screens
-```javascript
-import { AIChatScreen, JournalScreen } from '@/components/screens';
+import { MemoryGame, SpeedTap, WordChain } from '@/components/minigames';
 ```
 
 ### Adding New Minigames
 1. Create new file in `components/minigames/YourGame.jsx`
 2. Export component: `export const YourGame = ({ onBack, colors, updateTokens }) => { ... }`
 3. Add to `components/minigames/index.js`
-4. Import and use in main app
+4. Import and use in `app/(tabs)/index.jsx` inside a wrapper.
 
 ## 🎨 Component Props
 
 ### Minigames Props
-- `onBack`: Function to navigate back
-- `colors`: Theme colors object
-- `updateTokens`: Function to award tokens
-
-### Screen Props
-- `onBack`: Function to navigate back
-- `colors`: Theme colors object
-- Plus screen-specific props (user, profile, db, etc.)
-
-## 📊 Benefits
-
-✅ **Better Organization** - Each feature in its own file  
-✅ **Easier Maintenance** - Fix bugs in isolated components  
-✅ **Faster Development** - Add new games without touching main file  
-✅ **Cleaner Code** - Organized into logical modules  
-✅ **Team Friendly** - Multiple devs can work simultaneously  
-✅ **500 Token Cap** - Balanced progression system
-✅ **10 Fun Minigames** - Hours of engaging stress relief!
-
-## 🎮 Game Token Economy
-
-| Game | Reward | Trigger |
-|------|--------|---------|
-| Zen Match | +10 | Complete all pairs |
-| Pop Bubbles | +1 | Each pop |
-| Switches | +5 | Every 20 flips |
-| Color Calm | +5 | Every 20 taps |
-| Zen Grid | +10 | Light all squares |
-| Daily Fortune | +5 | Crack cookie |
-| **Spin Wheel** | **1-20** | **Random spin** |
-| **Tap Counter** | **2-20** | **Based on speed (40-100+ taps)** |
-| **Pattern Repeat** | **5/level** | **Each level completed** |
-| **Breathing** | **+5** | **Each cycle completed** |
-| AI Chat | -5 | Per message (cost) |
-| **MAX TOKENS** | **500** | **Cap limit** |
-
-## 🚀 Recent Updates
-
-### v2.0 - Major Feature Update
-- Added 500 token cap for balanced gameplay
-- Removed daily reward modal (now auto-claims with alert)
-- Added 4 new engaging minigames
-- Improved token reward system
-- Better alignment and UI consistency
-
-### v1.0 - Initial Organization  
-- Separated 6 original minigames
-- Created screens folder structure  
-- Organized imports and exports
+- `onBack`: Function to navigate back (provided by wrapper)
+- `colors`: Theme colors object (light/dark mode)
+- `updateTokens`: Function to award tokens (e.g., `updateTokens(5)`)
 
 ---
 
